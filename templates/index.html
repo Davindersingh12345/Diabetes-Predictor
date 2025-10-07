@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Diabetes Prediction</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <div class="container">
+    <h1>🩺 Diabetes Prediction App</h1>
+    
+    <form id="predictionForm">
+      <label for="age">Age:</label>
+      <input type="number" id="age" required>
+
+      <label for="bmi">BMI:</label>
+      <input type="number" step="0.1" id="bmi" required>
+
+      <label for="glucose">Glucose:</label>
+      <input type="number" id="glucose" required>
+
+      <label for="bp">Blood Pressure:</label>
+      <input type="number" id="bp" required>
+
+      <label for="fhistory">Family History:</label>
+      <select id="fhistory" required>
+        <option value="1">Yes</option>
+        <option value="0">No</option>
+      </select>
+
+      <button type="submit">Predict</button>
+    </form>
+
+    <div id="result"></div>
+    <div id="error"></div>
+  </div>
+
+  <script>
+    document.getElementById("predictionForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const data = {
+        Age: parseFloat(document.getElementById("age").value),
+        BMI: parseFloat(document.getElementById("bmi").value),
+        Glucose: parseFloat(document.getElementById("glucose").value),
+        BloodPressure: parseFloat(document.getElementById("bp").value),
+        FamilyHistory: parseInt(document.getElementById("fhistory").value)
+      };
+
+      fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(result => {
+        const resultBox = document.getElementById("result");
+        const errorBox = document.getElementById("error");
+
+        if (result.error) {
+          resultBox.style.display = "none";
+          errorBox.style.display = "block";
+          errorBox.innerHTML = `<p><strong>Error:</strong> ${result.details}</p>`;
+        } else {
+          errorBox.style.display = "none";
+          resultBox.style.display = "block";
+          resultBox.innerHTML = `
+            <h2>Prediction Results</h2>
+            <p>Logistic Regression: <strong>${result.logistic_prediction === 1 ? 'Diabetic' : 'Not Diabetic'}</strong></p>
+            <p>Decision Tree: <strong>${result.tree_prediction === 1 ? 'Diabetic' : 'Not Diabetic'}</strong></p>
+          `;
+        }
+      })
+      .catch(err => {
+        document.getElementById("result").style.display = "none";
+        const errorBox = document.getElementById("error");
+        errorBox.style.display = "block";
+        errorBox.innerHTML = `<p><strong>Connection error:</strong> Could not reach server.</p>`;
+        console.error(err);
+      });
+    });
+  </script>
+</body>
+</html>
